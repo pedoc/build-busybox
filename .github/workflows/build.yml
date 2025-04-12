@@ -1,0 +1,50 @@
+name: Build and Release
+ 
+on:
+  push:
+    tags:
+      - 'v*' # 当推送 v 开头的标签时触发
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build-linux:
+    runs-on: ${{ matrix.os }}
+    container:
+      image: debian:10
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            output_name: busybox-linux-x64
+            version: 1.36.1
+          - os: ubuntu-24.04-arm #ubuntu-latest-arm
+            arch: arm64
+            output_name: busybox-linux-arm64
+            version: 1.36.1
+
+    steps:
+    - name: Check Environment
+      run: |
+        uname -a
+        ldd --version
+
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        apt update
+        apt install build-essential curl -y
+    
+    - name: Build busybox
+      run: |
+        ./build_busybox.sh ${{matrix.version}} ${{matrix.output_name}}
+    
+    - name: Create Github Release
+      id: create_release
+      uses: softprops/action-gh-release@v2.2.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: ${{ matrix.output_name }}
