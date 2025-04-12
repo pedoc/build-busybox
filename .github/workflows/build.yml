@@ -39,6 +39,7 @@ jobs:
     
     - name: Build busybox
       run: |
+        chmod +x ./build_busybox.sh
         ./build_busybox.sh ${{matrix.version}} ${{matrix.output_name}}
     
     - name: Create Github Release
